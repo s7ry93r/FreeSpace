@@ -52,7 +52,7 @@ namespace FreeSpace.Data.Repo
             }
         }
 
-        public void SoftDeleteFileThumbPrint(int Id)
+        public bool SoftDeleteFileThumbPrint(int Id)
         {
             var list = RetrieveAllInstancesWithThumbPrint(Id);
             if (list.Count == 1)
@@ -64,8 +64,10 @@ namespace FreeSpace.Data.Repo
                     tp.UpdatedStamp = DateTime.Now;
                     ctx.FileThumbPrints.Attach(tp);
                     ctx.SaveChanges();
+                    return true;
                 }
             }
+            return false;
         }
 
         public List<FileInstance> RetrieveAllInstancesWithThumbPrint(int Id)
@@ -75,8 +77,6 @@ namespace FreeSpace.Data.Repo
                 return (from f in ctx.FileInstances where f.FileThumbPrintId == Id && !f.IsHistory select f).ToList();
             }
         }
-
-
 
         public FileInstance CreateFileInstance(FileInstance instance)
         {
@@ -90,12 +90,11 @@ namespace FreeSpace.Data.Repo
             }
         }
 
-        public FileInstance RetrieveFileInstance(string fullPath)
+        public FileInstance RetrieveFileInstance(FileInfo fileInfo)
         {
-            var fi = new FileInfo(fullPath);
             using (var ctx = new FreeSpaceContext())
             {
-                return ctx.FileInstances.FirstOrDefault(f => f.FilePath == fi.DirectoryName && f.FileName == fi.Name && !f.IsHistory);
+                return ctx.FileInstances.FirstOrDefault(f => f.FilePath == fileInfo.DirectoryName && f.FileName == fileInfo.Name && !f.IsHistory);
             }
         }
 
@@ -111,6 +110,57 @@ namespace FreeSpace.Data.Repo
         }
 
 
+        public void CreateScanException(Exception ex, ScanExceptionType exType, string shortDesc, string fullPath)
+        {
+            using (var ctx = new FreeSpaceContext())
+            {
+                var instance = new ScanException
+                {
+                    CreatedStamp = DateTime.Now,
+                    ExceptionType = (int) exType,
+                    Path = fullPath,
+                    ShortDesc = shortDesc,
+                    Source = ex.Source,
+                    HResult = ex.HResult,
+                    Message = ex.Message,
+                    StackTrace = ex.StackTrace,
+                    ExceptionName = ex.GetType().ToString()
+                };
 
+                var fnf = ex as FileNotFoundException;
+                if (fnf != null)
+                {
+                    instance.InnerExceptionMessage = fnf.InnerException?.Message;
+                    instance.ExceptionName = fnf.GetType().ToString();
+                }
+                var dnf = ex as DirectoryNotFoundException;
+                if (dnf != null)
+                {
+                    instance.InnerExceptionMessage = dnf.InnerException?.Message;
+                    instance.ExceptionName = dnf.GetType().ToString();
+                }
+                var ptl = ex as PathTooLongException;
+                if (ptl != null)
+                {
+                    instance.InnerExceptionMessage = ptl.InnerException?.Message;
+                    instance.ExceptionName = ptl.GetType().ToString();
+                }
+                var ua = ex as UnauthorizedAccessException;
+                if (ua != null)
+                {
+                    instance.InnerExceptionMessage = ua.InnerException?.Message;
+                    instance.ExceptionName = ua.GetType().ToString();
+                }
+                var ioe = ex as IOException;
+                if (ioe != null)
+                {
+                    instance.InnerExceptionMessage = ioe.InnerException?.Message;
+                    instance.ExceptionName = ioe.GetType().ToString();
+                }
+
+                ctx.ScanExceptions.Add(instance);
+                ctx.SaveChanges();
+            }
+        }
     }
 }

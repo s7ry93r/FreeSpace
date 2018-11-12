@@ -25,12 +25,8 @@ namespace FreeSpace.Data
 
         public virtual DbSet<FileThumbPrint> FileThumbPrints { get; set; }
         public virtual DbSet<FileInstance> FileInstances { get; set; }
+        public virtual DbSet<ScanException> ScanExceptions { get; set; }
 
     }
 
-    //public class MyEntity
-    //{
-    //    public int Id { get; set; }
-    //    public string Name { get; set; }
-    //}
 }

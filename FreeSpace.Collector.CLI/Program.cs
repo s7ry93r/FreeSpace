@@ -6,10 +6,12 @@ using System.Threading.Tasks;
 
 namespace FreeSpace.Collector.CLI
 {
-    class Program
+    public class Program
     {
         static void Main(string[] args)
         {
+            var prompt = new Prompt();
+            prompt.Run();
         }
     }
 }

@@ -11,25 +11,37 @@ namespace FreeSpace.Collector.CLI
 {
     public class YamlReader
     {
-        private List<string> listDirs;
+        private List<string> searchDirectories;
+        //private List<string> skipExtensions;
+        //private List<string> skipSubDirectories;
 
         public YamlReader()
         {
-            listDirs = new List<string>();
+            searchDirectories = new List<string>();
+
+            var yamlPath = CM.AppSettings["yamlFile"];
+            var streamReader = new StreamReader(yamlPath);
+            var yamlStream = new YamlStream();
+            yamlStream.Load(streamReader);
+
+            var mappingNode = (YamlMappingNode)yamlStream.Documents[0].RootNode;
+            getListItems(searchDirectories, "search", mappingNode);
+
         }
 
-        public void Read()
+        public List<string> SearchDirectories
         {
-            var yamlPath = CM.AppSettings["yamlFile"];
-            var sr = new StreamReader(yamlPath);
-            var ys = new YamlStream();
-            ys.Load(sr);
+            get { return searchDirectories; }
+        }
 
-            var seqNode = (YamlSequenceNode) ys.Documents[0].RootNode;
-            foreach (var entry in seqNode.Children)
+        private void getListItems(List<string> list, string key, YamlMappingNode mappingNode)
+        {
+            var items = (YamlSequenceNode) mappingNode.Children[new YamlScalarNode(key)];
+            foreach (YamlScalarNode item in items)
             {
-                listDirs.Add(entry.ToString());
+                list.Add(item.Value);
             }
         }
+
     }
 }
